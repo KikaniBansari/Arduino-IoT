@@ -1,2 +1,2 @@
-# Arduino-IoT
-In this repository, all the projects that we have been working on based on IOT and arduino are in this repository. I hope you have fun with this one
+# Obstacle avoidance car
+In this repository, we are going to make an obstacle avoiding fully functional car using arduino and bo motors, etc.
