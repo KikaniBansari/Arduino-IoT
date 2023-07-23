@@ -1,0 +1,139 @@
+#include <AFMotor.h>  // Install the Adafruit Motor V1 library from the Arduino Library Manager
+#include <Servo.h>    // Install the Servo library for the servo motor
+
+#define trigpin A4    // Define the pin connected to the ultrasonic sensor's trigger pin
+#define echopin A5    // Define the pin connected to the ultrasonic sensor's echo pin
+#define speed 250     // Define the speed of the motors (0-255)
+#define motor 10      // Define the pin number for the servo motor
+#define spoint 90     // Define the center position of the servo (90 degrees)
+
+int dis;
+int Left;
+int Right;
+int L = 0;
+int R = 0;
+
+Servo servo;
+AF_DCMotor m1(1, MOTOR12_1KHZ);
+AF_DCMotor m2(2, MOTOR12_1KHZ);
+AF_DCMotor m3(3, MOTOR12_1KHZ);
+AF_DCMotor m4(4, MOTOR12_1KHZ);
+
+void setup() {
+  pinMode(trigpin, OUTPUT);
+  pinMode(echopin, INPUT);
+  servo.attach(motor); // Attach the servo motor to the specified pin
+  Serial.begin(9600);
+  m1.setSpeed(speed);  // Set the speed of motor 1
+  m2.setSpeed(speed);  // Set the speed of motor 2
+  m3.setSpeed(speed);  // Set the speed of motor 3
+  m4.setSpeed(speed);  // Set the speed of motor 4
+}
+
+void loop() {
+  dis = ultrasonic();  // Get the distance from the ultrasonic sensor
+  Serial.print("Distance: ");
+  Serial.print(dis);   // Print the distance in centimeters to the serial monitor
+  Serial.println(" cm");
+
+  // If an obstacle is detected within 12 cm, perform obstacle avoidance
+  if (dis <= 12) {
+    stop();
+    backward();
+    delay(100);
+    stop();
+
+    L = leftsee();
+    servo.write(spoint); // Rotate the servo to the center position
+    delay(800);
+
+    R = rightsee();
+    servo.write(spoint); // Rotate the servo to the center position
+
+    // If the obstacle is closer on the left, turn right
+    if (L < R) {
+      right();
+      delay(500);
+      stop();
+      delay(200);
+    } 
+    // If the obstacle is closer on the right, turn left
+    else if (L > R) {
+      left();
+      delay(500);
+      stop();
+      delay(200);
+    }
+  } else {
+    forward();  // If no obstacle is detected, move forward
+  }
+}
+
+// Function to measure distance using the ultrasonic sensor
+int ultrasonic() {
+  digitalWrite(trigpin, LOW);
+  delayMicroseconds(4);
+  digitalWrite(trigpin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigpin, LOW);
+  
+  long duration = pulseIn(echopin, HIGH);
+  long distance = duration * 0.034 / 2;
+  return distance;
+}
+
+// Function to scan the left side using the servo and ultrasonic sensor
+int leftsee() {
+  servo.write(0);     // Rotate the servo to the leftmost position
+  delay(800);
+  Left = ultrasonic(); // Measure the distance from the left side
+  return Left;
+}
+
+// Function to scan the right side using the servo and ultrasonic sensor
+int rightsee() {
+  servo.write(180);   // Rotate the servo to the rightmost position
+  delay(800);
+  Right = ultrasonic(); // Measure the distance from the right side
+  return Right;
+}
+
+// Function to move the robot forward
+void forward() {
+  m1.run(FORWARD);
+  m2.run(FORWARD);
+  m3.run(FORWARD);
+  m4.run(FORWARD);
+}
+
+// Function to move the robot backward
+void backward() {
+  m1.run(BACKWARD);
+  m2.run(BACKWARD);
+  m3.run(BACKWARD);
+  m4.run(BACKWARD);
+}
+
+// Function to stop the robot
+void stop() {
+  m1.run(RELEASE);
+  m2.run(RELEASE);
+  m3.run(RELEASE);
+  m4.run(RELEASE);
+}
+
+// Function to make the robot turn right
+void right() {
+  m1.run(FORWARD);
+  m2.run(BACKWARD);
+  m3.run(BACKWARD);
+  m4.run(FORWARD);
+}
+
+// Function to make the robot turn left
+void left() {
+  m1.run(BACKWARD);
+  m2.run(FORWARD);
+  m3.run(FORWARD);
+  m4.run(BACKWARD);
+}
